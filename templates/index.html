@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Fine-tuning</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        #logOutput {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            padding: 10px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Choose a model, dataset, and prompt for fine-tuning</h1>
+
+    <form id="fineTuneForm">
+        <label for="model">Model:</label>
+        <input type="text" id="model" name="model" required>
+        <br><br>
+
+        <label for="dataset">Dataset:</label>
+        <input type="text" id="dataset" name="dataset" required>
+        <br><br>
+
+        <label for="promptType">Prompt Type:</label>
+        <select id="promptType" name="promptType" required>
+            <option value="">Select prompt type</option>
+            <option value="prompt_input">Prompt Input</option>
+            <option value="prompt_no_input">Prompt No Input</option>
+        </select>
+        <br><br>
+
+        <div id="promptFields">
+            <!-- Dynamic fields will be inserted here based on prompt type -->
+        </div>
+
+        <label for="epochs">Epochs:</label>
+        <input type="text" id="epochs" name="epochs" required>
+        <br><br>
+        <button type="submit">Start Fine-tuning</button>
+    </form>
+
+    <br><br>
+    <button id="secondFunctionButton" type="button">Merge and convert to GGUF</button>
+
+
+    <h2>Logs</h2>
+    <pre id="logOutput">Logs will be displayed here...</pre>
+
+    <script>
+        const form = document.getElementById("fineTuneForm");
+        const logOutput = document.getElementById("logOutput");
+        const promptType = document.getElementById("promptType");
+        const promptFields = document.getElementById("promptFields");
+
+        // Function to display appropriate fields based on prompt type
+        function updatePromptFields() {
+            const selectedType = promptType.value;
+
+            if (selectedType === "prompt_input") {
+                promptFields.innerHTML = `
+                    <label for="instruction">Instruction:</label>
+                    <input type="text" id="instruction" name="instruction" required>
+                    <br><br>
+                    <label for="input">Input:</label>
+                    <input type="text" id="input" name="input" required>
+                    <br><br>
+                    <label for="output">Output:</label>
+                    <input type="text" id="output" name="output" required>
+                    <br><br>
+                `;
+            } else if (selectedType === "prompt_no_input") {
+                promptFields.innerHTML = `
+                    <label for="instruction">Instruction:</label>
+                    <input type="text" id="instruction" name="instruction" required>
+                    <br><br>
+                    <label for="output">Output:</label>
+                    <input type="text" id="output" name="output" required>
+                    <br><br>
+                `;
+            } else {
+                promptFields.innerHTML = '';
+            }
+        }
+
+        // Update fields on prompt type change
+        promptType.addEventListener("change", updatePromptFields);
+
+        // Handle form submission
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+
+            // Start fine-tuning by sending the form data to the backend
+            fetch("/finetune", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    // Clear existing logs and start streaming new ones
+                    logOutput.textContent = "Fine-tuning started...\n";
+                    streamLogs();
+                } else {
+                    logOutput.textContent = "Error: " + data.error;
+                }
+            });
+        });
+
+        // Function to stream logs from the backend
+        function streamLogs() {
+            const eventSource = new EventSource("/logs");
+
+            eventSource.onmessage = function(event) {
+                logOutput.textContent += event.data + "\n";
+                logOutput.scrollTop = logOutput.scrollHeight;  // Scroll to bottom as new logs arrive
+            };
+
+            eventSource.onerror = function() {
+                logOutput.textContent += "Error in log streaming.\n";
+                eventSource.close();
+            };
+        }
+
+
+    // Handle second button click for post-processing
+    secondFunctionButton.addEventListener("click", function() {
+        // Retrieve form data
+        const epochs = document.getElementById("epochs").value;
+        // Prepare data as JSON
+        const formData = {
+            epochs: epochs,
+        };
+
+        // Send form data in the POST request
+        fetch("/postprocess", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(formData)  // Include the form data in the request body
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                logOutput.textContent += "\nPost-processing started...\n";
+                streamLogs();  // Optionally, start streaming logs for the post-processing task
+            } else {
+                logOutput.textContent += "\nError in post-processing: " + data.error;
+            }
+        })
+        .catch(error => {
+            logOutput.textContent += "\nError in sending request: " + error.message;
+        });
+    });
+    </script>
+</body>
+</html>
