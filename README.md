@@ -7,3 +7,4 @@ IPEX-LLM Fine tune App written in Golang to let you finetune model with huggingf
 5. git clone https://github.com/ggerganov/llama.cpp
 6. Create a write token and copy it to huggingface-cli login
 7. cd IPEX-LLM-Finetune-APP && go run main.go
+8. go to localhost:12345 to launch the app
