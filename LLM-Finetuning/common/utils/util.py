@@ -108,10 +108,11 @@ def get_train_val_data(data, tokenizer, prompter, prompt_type, instruction, inpu
             )
 
         if prompt_type=="prompt_no_input":
-            full_prompt = prompter.generate_prompt(
-                data_point[instruction],
-                data_point[output],
-            )
+            for answer in data_point[output]:
+                full_prompt = prompter.generate_prompt(
+                    data_point[instruction],
+                    answer,
+                )
 
         tokenized_full_prompt = tokenize(full_prompt)
         if not train_on_inputs:

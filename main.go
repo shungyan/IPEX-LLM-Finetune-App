@@ -33,7 +33,7 @@ func main() {
 		input := c.PostForm("input") // This can be empty for prompt_no_input
 		output := c.PostForm("output")
 		promptType := c.PostForm("promptType")
-		epochs := c.PostForm("epochs")
+		maxsteps := c.PostForm("max-steps")
 
 		if model == "" || dataset == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Model and dataset are required"})
@@ -41,7 +41,7 @@ func main() {
 		}
 
 		// Call the backend process asynchronously and start fine-tuning
-		go runFineTuneProcess(model, dataset, instruction, input, output, promptType, epochs)
+		go runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":     "Fine-tuning started",
@@ -51,7 +51,7 @@ func main() {
 			"input":       input,
 			"output":      output,
 			"promptType":  promptType,
-			"epochs":      epochs,
+			"max-steps":   maxsteps,
 		})
 	})
 
@@ -71,19 +71,19 @@ func main() {
 
 	// Handle the post-processing request
 	r.POST("/postprocess", func(c *gin.Context) {
-		// Define a struct to hold the 'epochs' field
+		// Define a struct to hold the 'maxsteps' field
 		var jsonData struct {
-			Epochs string `json:"epochs" binding:"required"`
+			maxsteps string `json:"maxsteps" binding:"required"`
 		}
 
-		// Bind the JSON body to the struct (only binds the 'epochs' field)
+		// Bind the JSON body to the struct (only binds the 'maxsteps' field)
 		if err := c.ShouldBindJSON(&jsonData); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		// Call the post-processing function asynchronously with just the epochs value
-		go runPostProcess(jsonData.Epochs)
+		// Call the post-processing function asynchronously with just the maxsteps value
+		go runPostProcess(jsonData.maxsteps)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Post-processing started",
@@ -94,10 +94,10 @@ func main() {
 	r.Run(":12345")
 }
 
-func runPostProcess(epochs string) {
+func runPostProcess(maxsteps string) {
 
-	checkpointPath := fmt.Sprintf("./outputs/checkpoint-%s", epochs)
-	outputPath := fmt.Sprintf("./outputs/checkpoint-%s-merged", epochs)
+	checkpointPath := fmt.Sprintf("./outputs/checkpoint-%s", maxsteps)
+	outputPath := fmt.Sprintf("./outputs/checkpoint-%s-merged", maxsteps)
 
 	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/export_merged_model.py", "--repo-id-or-model-path", "meta-llama/Llama-2-7b-hf", "--adapter_path", checkpointPath, "--output_path", outputPath)
 
@@ -127,7 +127,7 @@ func runPostProcess(epochs string) {
 
 	log.Printf("merge completed")
 
-	ggufPath := fmt.Sprintf("./outputs/checkpoint-%s.gguf", epochs)
+	ggufPath := fmt.Sprintf("./outputs/checkpoint-%s.gguf", maxsteps)
 
 	cmd2 := exec.Command("python3", "../llama.cpp/convert_hf_to_gguf.py", outputPath, "--outfile", ggufPath)
 
@@ -159,11 +159,11 @@ func runPostProcess(epochs string) {
 }
 
 // Backend process to run the fine-tuning script and capture logs
-func runFineTuneProcess(model, dataset, instruction, input, output, promptType, epochs string) {
+func runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps string) {
 	log.Printf("Starting fine-tuning with model: %s, dataset: %s\n", model, dataset)
 
 	// Call the Python script with model and dataset as arguments
-	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/qlora_finetuning.py", "--repo-id-or-model-path", model, "--dataset", dataset, "--prompt_type", promptType, "--instruction", instruction, "--output", output, "--epochs", epochs)
+	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/qlora_finetuning.py", "--repo-id-or-model-path", model, "--dataset", dataset, "--prompt_type", promptType, "--instruction", instruction, "--output", output, "--max_steps", maxsteps)
 
 	// Capture stdout and stderr of the process
 	stdout, err := cmd.StdoutPipe()
