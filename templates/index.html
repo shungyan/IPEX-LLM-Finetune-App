@@ -50,6 +50,8 @@
 
         <label for="maxsteps">Max steps:</label>
         <input type="text" id="maxsteps" name="maxsteps" required>
+        <label for="savesteps">Save steps:</label>
+        <input type="text" id="savesteps" name="savesteps" required>
         <br><br>
         <button type="submit">Start Fine-tuning</button>
     </form>
@@ -142,10 +144,10 @@
     // Handle second button click for post-processing
     secondFunctionButton.addEventListener("click", function() {
         // Retrieve form data
-        const epochs = document.getElementById("epochs").value;
+        const maxsteps = document.getElementById("maxsteps").value;
         // Prepare data as JSON
         const formData = {
-            epochs: epochs,
+            maxsteps: maxsteps,
         };
 
         // Send form data in the POST request

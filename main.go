@@ -33,15 +33,16 @@ func main() {
 		input := c.PostForm("input") // This can be empty for prompt_no_input
 		output := c.PostForm("output")
 		promptType := c.PostForm("promptType")
-		maxsteps := c.PostForm("max-steps")
+		maxsteps := c.PostForm("maxsteps")
+		savesteps := c.PostForm("savesteps") // Add this line
 
 		if model == "" || dataset == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Model and dataset are required"})
 			return
 		}
 
-		// Call the backend process asynchronously and start fine-tuning
-		go runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps)
+		// Update function call to include savesteps
+		go runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps, savesteps)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":     "Fine-tuning started",
@@ -51,7 +52,8 @@ func main() {
 			"input":       input,
 			"output":      output,
 			"promptType":  promptType,
-			"max-steps":   maxsteps,
+			"maxsteps":    maxsteps,
+			"savesteps":   savesteps, // Add this line
 		})
 	})
 
@@ -159,11 +161,20 @@ func runPostProcess(maxsteps string) {
 }
 
 // Backend process to run the fine-tuning script and capture logs
-func runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps string) {
+func runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps, savesteps string) {
 	log.Printf("Starting fine-tuning with model: %s, dataset: %s\n", model, dataset)
 
 	// Call the Python script with model and dataset as arguments
-	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/qlora_finetuning.py", "--repo-id-or-model-path", model, "--dataset", dataset, "--prompt_type", promptType, "--instruction", instruction, "--output", output, "--max_steps", maxsteps)
+	cmd := exec.Command("python3",
+		"../LLM-Finetuning/QLoRA/simple-example/qlora_finetuning.py",
+		"--repo-id-or-model-path", model,
+		"--dataset", dataset,
+		"--prompt_type", promptType,
+		"--instruction", instruction,
+		"--input", input,
+		"--output", output,
+		"--max_steps", maxsteps,
+		"--save_steps", savesteps) // Add this line
 
 	// Capture stdout and stderr of the process
 	stdout, err := cmd.StdoutPipe()

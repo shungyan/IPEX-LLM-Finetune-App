@@ -44,6 +44,7 @@ if __name__ == "__main__":
     parser.add_argument('--input', type=str, default="input")
     parser.add_argument('--output', type=str, default="output")
     parser.add_argument('--max_steps', type=int, default="200")
+    parser.add_argument('--save_steps', type=int, default="100")
 
     args = parser.parse_args()
     model_path = args.repo_id_or_model_path
@@ -52,7 +53,8 @@ if __name__ == "__main__":
     instruction=args.instruction
     input=args.input
     output=args.output
-    max_stes=args.max_steps
+    max_steps=args.max_steps
+    save_steps=args.save_steps
     tokenizer = LlamaTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
     if dataset_path.endswith(".json") or dataset_path.endswith(".jsonl"):
@@ -107,9 +109,9 @@ if __name__ == "__main__":
             per_device_train_batch_size=4,
             gradient_accumulation_steps= 1,
             warmup_steps=20,
-            max_steps=max_step,
+            max_steps=max_steps,
             learning_rate=2e-5,
-            save_steps=100,
+            save_steps=save_steps,
             bf16=True,  # bf16 is more stable in training
             logging_steps=20,
             output_dir="outputs",
