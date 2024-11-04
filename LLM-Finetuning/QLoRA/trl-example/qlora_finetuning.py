@@ -40,10 +40,22 @@ if __name__ == "__main__":
                         help='The huggingface repo id for the Llama2 (e.g. `meta-llama/Llama-2-7b-hf` and `meta-llama/Llama-2-13b-chat-hf`) to be downloaded'
                              ', or the path to the huggingface checkpoint folder')
     parser.add_argument('--dataset', type=str, default="yahma/alpaca-cleaned")
+    parser.add_argument('--prompt_type', type=str, default="prompt_input")
+    parser.add_argument('--instruction', type=str, default="instruction")
+    parser.add_argument('--input', type=str, default="input")
+    parser.add_argument('--output', type=str, default="output")
+    parser.add_argument('--max_steps', type=int, default="200")
+    parser.add_argument('--save_steps', type=int, default="100")
 
     args = parser.parse_args()
     model_path = args.repo_id_or_model_path
     dataset_path = args.dataset
+    prompt_type=args.prompt_type
+    instruction=args.instruction
+    input=args.input
+    output=args.output
+    max_steps=args.max_steps
+    save_steps=args.save_steps
     tokenizer = LlamaTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
     if dataset_path.endswith(".json") or dataset_path.endswith(".jsonl"):
@@ -56,7 +68,7 @@ if __name__ == "__main__":
 
     # Data processing
     prompter = Prompter("alpaca")
-    train_data, _ = get_train_val_data(data, tokenizer, prompter, train_on_inputs=True,
+    train_data, _ = get_train_val_data(data, tokenizer, prompter, prompt_type, instruction, input, output, train_on_inputs=True,
                                        add_eos_token=False, cutoff_len=256, val_set_size=0, seed=42)
 
     bnb_config = BitsAndBytesConfig(

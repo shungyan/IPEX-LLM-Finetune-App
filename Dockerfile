@@ -45,7 +45,8 @@ RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRO
     # install transformers & peft dependencies
     pip install transformers==4.36.0 && \
     pip install peft==0.10.0 datasets && \
-    pip install bitsandbytes scipy fire
+    pip install bitsandbytes scipy fire &&\
+    pip install trl==0.9.6
 
 #install intel GPU driver
 RUN wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.16695.4/intel-igc-core_1.0.16695.4_amd64.deb && \
