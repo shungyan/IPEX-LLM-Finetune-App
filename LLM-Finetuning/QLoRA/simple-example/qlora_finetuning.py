@@ -16,7 +16,7 @@
 
 import torch
 import os
-
+from datetime import datetime
 import transformers
 from transformers import LlamaTokenizer
 from peft import LoraConfig
@@ -45,6 +45,7 @@ if __name__ == "__main__":
     parser.add_argument('--output', type=str, default="output")
     parser.add_argument('--max_steps', type=int, default="200")
     parser.add_argument('--save_steps', type=int, default="100")
+    parser.add_argument('--output_dir', type=str, required=True )
 
     args = parser.parse_args()
     model_path = args.repo_id_or_model_path
@@ -55,6 +56,7 @@ if __name__ == "__main__":
     output=args.output
     max_steps=args.max_steps
     save_steps=args.save_steps
+    output_dir=args.output_dir
     tokenizer = LlamaTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
     if dataset_path.endswith(".json") or dataset_path.endswith(".jsonl"):
@@ -114,7 +116,7 @@ if __name__ == "__main__":
             save_steps=save_steps,
             bf16=True,  # bf16 is more stable in training
             logging_steps=20,
-            output_dir="outputs",
+            output_dir=output_dir,
             optim="adamw_hf", # paged_adamw_8bit is not supported yet
             # gradient_checkpointing=True, # can further reduce memory but slower
         ),

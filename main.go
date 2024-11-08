@@ -34,7 +34,8 @@ func main() {
 		output := c.PostForm("output")
 		promptType := c.PostForm("promptType")
 		maxsteps := c.PostForm("maxsteps")
-		savesteps := c.PostForm("savesteps") // Add this line
+		savesteps := c.PostForm("savesteps")
+		outputdir := c.PostForm("outputdir") // Add this line
 
 		if model == "" || dataset == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Model and dataset are required"})
@@ -42,7 +43,7 @@ func main() {
 		}
 
 		// Update function call to include savesteps
-		go runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps, savesteps)
+		go runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps, savesteps, outputdir)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":     "Fine-tuning started",
@@ -53,7 +54,8 @@ func main() {
 			"output":      output,
 			"promptType":  promptType,
 			"maxsteps":    maxsteps,
-			"savesteps":   savesteps, // Add this line
+			"savesteps":   savesteps,
+			"outputdir":   outputdir, // Add this line
 		})
 	})
 
@@ -96,12 +98,11 @@ func main() {
 	r.Run(":12345")
 }
 
-func runPostProcess(maxsteps string) {
+func runPostProcess(maxsteps, outputdir string) {
 
-	checkpointPath := fmt.Sprintf("./outputs/checkpoint-%s", maxsteps)
-	outputPath := fmt.Sprintf("./outputs/checkpoint-%s-merged", maxsteps)
+	outputPath := fmt.Sprintf("./outputs/%s/checkpoint-%s-merged", outputdir, maxsteps)
 
-	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/export_merged_model.py", "--repo-id-or-model-path", "meta-llama/Llama-2-7b-hf", "--adapter_path", checkpointPath, "--output_path", outputPath)
+	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/export_merged_model.py", "--repo-id-or-model-path", "meta-llama/Llama-2-7b-hf", "--adapter_path", outputdir, "--output_path", outputPath)
 
 	// Capture stdout and stderr of the process
 	stdout, err := cmd.StdoutPipe()
@@ -129,7 +130,7 @@ func runPostProcess(maxsteps string) {
 
 	log.Printf("merge completed")
 
-	ggufPath := fmt.Sprintf("./outputs/checkpoint-%s.gguf", maxsteps)
+	ggufPath := fmt.Sprintf("./outputs/%s-%s.gguf", outputdir, maxsteps)
 
 	cmd2 := exec.Command("python3", "../llama.cpp/convert_hf_to_gguf.py", outputPath, "--outfile", ggufPath)
 
@@ -161,7 +162,7 @@ func runPostProcess(maxsteps string) {
 }
 
 // Backend process to run the fine-tuning script and capture logs
-func runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps, savesteps string) {
+func runFineTuneProcess(model, dataset, instruction, input, output, promptType, maxsteps, savesteps, outputdir string) {
 	log.Printf("Starting fine-tuning with model: %s, dataset: %s\n", model, dataset)
 
 	// Call the Python script with model and dataset as arguments
@@ -174,7 +175,8 @@ func runFineTuneProcess(model, dataset, instruction, input, output, promptType, 
 		"--input", input,
 		"--output", output,
 		"--max_steps", maxsteps,
-		"--save_steps", savesteps) // Add this line
+		"--save_steps", savesteps,
+		"--outputdir", outputdir) // Add this line
 
 	// Capture stdout and stderr of the process
 	stdout, err := cmd.StdoutPipe()
