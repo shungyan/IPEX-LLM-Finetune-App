@@ -178,7 +178,7 @@ func runFineTuneProcess(model, dataset, instruction, input, output, promptType, 
 		"--output", output,
 		"--max_steps", maxsteps,
 		"--save_steps", savesteps,
-		"--outputdir", outputdir) // Add this line
+		"--output_dir", outputdir) // Add this line
 
 	// Capture stdout and stderr of the process
 	stdout, err := cmd.StdoutPipe()
