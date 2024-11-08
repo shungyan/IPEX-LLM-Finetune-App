@@ -77,7 +77,8 @@ func main() {
 	r.POST("/postprocess", func(c *gin.Context) {
 		// Define a struct to hold the 'maxsteps' field
 		var jsonData struct {
-			maxsteps string `json:"maxsteps" binding:"required"`
+			maxsteps  string `json:"maxsteps" binding:"required"`
+			outputdir string `json:"outputdir" binding:"required"`
 		}
 
 		// Bind the JSON body to the struct (only binds the 'maxsteps' field)
@@ -87,7 +88,7 @@ func main() {
 		}
 
 		// Call the post-processing function asynchronously with just the maxsteps value
-		go runPostProcess(jsonData.maxsteps)
+		go runPostProcess(jsonData.maxsteps, jsonData.outputdir)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Post-processing started",
