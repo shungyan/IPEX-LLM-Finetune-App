@@ -66,7 +66,7 @@ RUN mkdir -p /app
 COPY ./main.go /app/main.go
 COPY ./templates /app/templates
 COPY ./go.mod /app/go.mod
-COPY ./go.mod /app/go.sum
+COPY ./go.sum /app/go.sum
 
 # prepare finetune code and scripts
 COPY ./LLM-Finetuning /LLM-Finetuning
