@@ -116,7 +116,7 @@ if __name__ == "__main__":
             save_steps=save_steps,
             bf16=True,  # bf16 is more stable in training
             logging_steps=20,
-            output_dir=output_dir,
+            output_dir=f"outputs/{output_dir}",
             optim="adamw_hf", # paged_adamw_8bit is not supported yet
             # gradient_checkpointing=True, # can further reduce memory but slower
         ),

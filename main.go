@@ -100,9 +100,10 @@ func main() {
 
 func runPostProcess(maxsteps, outputdir string) {
 
+	checkpointPath := fmt.Sprintf("./outputs/%s/checkpoint-%s", outputdir, maxsteps)
 	outputPath := fmt.Sprintf("./outputs/%s/checkpoint-%s-merged", outputdir, maxsteps)
 
-	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/export_merged_model.py", "--repo-id-or-model-path", "meta-llama/Llama-2-7b-hf", "--adapter_path", outputdir, "--output_path", outputPath)
+	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/export_merged_model.py", "--repo-id-or-model-path", "meta-llama/Llama-2-7b-hf", "--adapter_path", checkpointPath, "--output_path", outputPath)
 
 	// Capture stdout and stderr of the process
 	stdout, err := cmd.StdoutPipe()
