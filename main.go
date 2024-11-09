@@ -77,8 +77,8 @@ func main() {
 	r.POST("/postprocess", func(c *gin.Context) {
 		// Define a struct to hold the 'maxsteps' field
 		var jsonData struct {
-			maxsteps  string `json:"maxsteps" binding:"required"`
-			outputdir string `json:"outputdir" binding:"required"`
+			Maxsteps  string `json:"maxsteps" binding:"required"`
+			Outputdir string `json:"outputdir" binding:"required"`
 		}
 
 		// Bind the JSON body to the struct (only binds the 'maxsteps' field)
@@ -88,7 +88,7 @@ func main() {
 		}
 
 		// Call the post-processing function asynchronously with just the maxsteps value
-		go runPostProcess(jsonData.maxsteps, jsonData.outputdir)
+		go runPostProcess(jsonData.Maxsteps, jsonData.Outputdir)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Post-processing started",
@@ -132,7 +132,7 @@ func runPostProcess(maxsteps, outputdir string) {
 
 	log.Printf("merge completed")
 
-	ggufPath := fmt.Sprintf("./outputs/%s-%s.gguf", outputdir, maxsteps)
+	ggufPath := fmt.Sprintf("./outputs/%s/%s-%s.gguf", outputPath, outputdir, maxsteps)
 
 	cmd2 := exec.Command("python3", "../llama.cpp/convert_hf_to_gguf.py", outputPath, "--outfile", ggufPath)
 
