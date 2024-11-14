@@ -101,36 +101,7 @@ func main() {
 
 func runPostProcess(maxsteps, outputdir string) {
 
-	checkpointPath := fmt.Sprintf("./outputs/%s/checkpoint-%s", outputdir, maxsteps)
 	outputPath := fmt.Sprintf("./outputs/%s/checkpoint-%s-merged", outputdir, maxsteps)
-
-	cmd := exec.Command("python3", "../LLM-Finetuning/QLoRA/simple-example/export_merged_model.py", "--repo-id-or-model-path", "meta-llama/Llama-2-7b-hf", "--adapter_path", checkpointPath, "--output_path", outputPath)
-
-	// Capture stdout and stderr of the process
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Fatalf("Error obtaining stdout: %v", err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Fatalf("Error obtaining stderr: %v", err)
-	}
-
-	// Start the command
-	if err := cmd.Start(); err != nil {
-		log.Fatalf("Failed to start the command: %v", err)
-	}
-
-	// Stream logs from stdout
-	go streamLogs(stdout)
-	go streamLogs(stderr)
-
-	// Wait for the command to finish
-	if err := cmd.Wait(); err != nil {
-		log.Fatalf("post process exited with error: %v", err)
-	}
-
-	log.Printf("merge completed")
 
 	ggufPath := fmt.Sprintf("./outputs/%s/%s-%s.gguf", outputPath, outputdir, maxsteps)
 
@@ -157,10 +128,38 @@ func runPostProcess(maxsteps, outputdir string) {
 
 	// Wait for the command to finish
 	if err := cmd2.Wait(); err != nil {
-		log.Fatalf("post process exited with error: %v", err)
+		log.Fatalf("GGUF conversion process exited with error: %v", err)
 	}
 
 	log.Printf("GGUF conversion completed")
+
+	cmd := exec.Command("python3", "../convert_ollama/convert_ollama.py", "--model_path", outputPath, "--save_path", "./Modelfile", "--ollama_custom_model_id", outputdir)
+
+	// Capture stdout and stderr of the process
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatalf("Error obtaining stdout: %v", err)
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatalf("Error obtaining stderr: %v", err)
+	}
+
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		log.Fatalf("Failed to start the command: %v", err)
+	}
+
+	// Stream logs from stdout
+	go streamLogs(stdout)
+	go streamLogs(stderr)
+
+	// Wait for the command to finish
+	if err := cmd.Wait(); err != nil {
+		log.Fatalf("ollama conversion process exited with error: %v", err)
+	}
+
+	log.Printf("Model %s succesfully added to ollama", outputdir)
 }
 
 // Backend process to run the fine-tuning script and capture logs
@@ -169,7 +168,7 @@ func runFineTuneProcess(model, dataset, instruction, input, output, promptType, 
 
 	// Call the Python script with model and dataset as arguments
 	cmd := exec.Command("python3",
-		"../LLM-Finetuning/QLoRA/simple-example/qlora_finetuning.py",
+		"../LLM-Finetuning/qlora_finetuning.py",
 		"--repo-id-or-model-path", model,
 		"--dataset", dataset,
 		"--prompt_type", promptType,
@@ -205,6 +204,37 @@ func runFineTuneProcess(model, dataset, instruction, input, output, promptType, 
 	}
 
 	log.Printf("Fine-tuning process completed for model: %s, dataset: %s\n", model, dataset)
+
+	checkpointPath := fmt.Sprintf("./outputs/%s/checkpoint-%s", outputdir, maxsteps)
+	outputPath := fmt.Sprintf("./outputs/%s/checkpoint-%s-merged", outputdir, maxsteps)
+
+	cmd2 := exec.Command("python3", "../LLM-Finetuning/export_merged_model.py", "--repo-id-or-model-path", model, "--adapter_path", checkpointPath, "--output_path", outputPath)
+
+	// Capture stdout and stderr of the process
+	stdout2, err := cmd2.StdoutPipe()
+	if err != nil {
+		log.Fatalf("Error obtaining stdout: %v", err)
+	}
+	stderr2, err := cmd2.StderrPipe()
+	if err != nil {
+		log.Fatalf("Error obtaining stderr: %v", err)
+	}
+
+	// Start the command
+	if err := cmd2.Start(); err != nil {
+		log.Fatalf("Failed to start the command: %v", err)
+	}
+
+	// Stream logs from stdout
+	go streamLogs(stdout2)
+	go streamLogs(stderr2)
+
+	// Wait for the command to finish
+	if err := cmd2.Wait(); err != nil {
+		log.Fatalf("post process exited with error: %v", err)
+	}
+
+	log.Printf("merge completed")
 }
 
 // Function to stream logs from a pipe

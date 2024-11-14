@@ -46,6 +46,7 @@ if __name__ == "__main__":
     parser.add_argument('--output', type=str, default="output")
     parser.add_argument('--max_steps', type=int, default="200")
     parser.add_argument('--save_steps', type=int, default="100")
+    parser.add_argument('--output_dir', type=str, required=True )
 
     args = parser.parse_args()
     model_path = args.repo_id_or_model_path
@@ -56,7 +57,11 @@ if __name__ == "__main__":
     output=args.output
     max_steps=args.max_steps
     save_steps=args.save_steps
+    output_dir=args.output_dir
     tokenizer = LlamaTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
     if dataset_path.endswith(".json") or dataset_path.endswith(".jsonl"):
         data = load_dataset("json", data_files=dataset_path)
@@ -112,11 +117,14 @@ if __name__ == "__main__":
             save_steps=100,
             bf16=True,  # bf16 is more stable in training
             logging_steps=20,
-            output_dir="outputs",
+            output_dir=f"outputs/{output_dir}",
             optim="adamw_hf", # paged_adamw_8bit is not supported yet
             gradient_checkpointing=True, # can further reduce memory but slower
         ),
         dataset_text_field="instruction",
+        data_collator=transformers.DataCollatorForSeq2Seq(
+            tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
+        ),
     )
     model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
     result = trainer.train()
