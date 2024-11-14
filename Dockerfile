@@ -70,6 +70,7 @@ COPY ./go.sum /app/go.sum
 
 # prepare finetune code and scripts
 COPY ./LLM-Finetuning /LLM-Finetuning
+COPY ./convert_ollama /convert_ollama
 
 # Prepare accelerate config
 RUN mkdir -p /root/.cache/huggingface/accelerate 

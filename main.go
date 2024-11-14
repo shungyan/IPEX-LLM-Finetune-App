@@ -103,7 +103,7 @@ func runPostProcess(maxsteps, outputdir string) {
 
 	outputPath := fmt.Sprintf("./outputs/%s/checkpoint-%s-merged", outputdir, maxsteps)
 
-	ggufPath := fmt.Sprintf("./outputs/%s/%s-%s.gguf", outputPath, outputdir, maxsteps)
+	ggufPath := fmt.Sprintf("./outputs/%s/%s-%s.gguf", outputdir, outputdir, maxsteps)
 
 	cmd2 := exec.Command("python3", "../llama.cpp/convert_hf_to_gguf.py", outputPath, "--outfile", ggufPath)
 

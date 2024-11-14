@@ -112,9 +112,9 @@ if __name__ == "__main__":
             per_device_train_batch_size=4,
             gradient_accumulation_steps= 1,
             warmup_steps=20,
-            max_steps=200,
+            max_steps=max_steps,
             learning_rate=2e-5,
-            save_steps=100,
+            save_steps=save_steps,
             bf16=True,  # bf16 is more stable in training
             logging_steps=20,
             output_dir=f"outputs/{output_dir}",
