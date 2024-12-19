@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -237,15 +236,20 @@ func runFineTuneProcess(model, dataset, instruction, input, output, promptType, 
 	log.Printf("merge completed")
 }
 
-// Function to stream logs from a pipe
 func streamLogs(pipe io.ReadCloser) {
-	scanner := bufio.NewScanner(pipe)
-	for scanner.Scan() {
-		logMessage := scanner.Text()
-		logsChannel <- logMessage // Send log message to the logsChannel
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatalf("Error reading logs: %v", err)
+	buf := make([]byte, 1024) // Buffer to read chunks
+	for {
+		n, err := pipe.Read(buf)
+		if n > 0 {
+			chunk := string(buf[:n])
+			fmt.Print(chunk)     // Print chunk to the console
+			logsChannel <- chunk // Send chunk to the logsChannel
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Error reading logs: %v", err)
+		}
 	}
 }
